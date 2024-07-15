@@ -18,48 +18,31 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-`define NPC_PLUS4   3'b000
 `define NPC_BRANCH  3'b001
 `define NPC_JUMP    3'b010
-`define NPC_JALR 3'b100
-
+`define NPC_JALR    3'b100
+`define NPC_PC4     3'b000
 module Branch(
-    input [31:0] IF_PC_out,
-    input [31:0] MEM_PC,
-    input [2:0]  MEM_NPCOp,
-    input [31:0] MEM_immout,
-    input [31:0] MEM_aluout,
-    input MEM_Zero,
-    output  IF_Flush,
-    output  ID_Flush,
-    output  EX_Flush,
-    output reg [31:0] NPC
+    input [31:0] IF_PC,
+    input [31:0] EX_PC,
+    input [2:0]  EX_NPCSel,
+    input [31:0] EX_immout,
+    input [31:0] EX_aluout,
+    output reg [31:0] NPC,
+    output Branch
     );
 
-
-    wire [2:0] MEM_NPCSel;
-    assign MEM_NPCSel[0] = MEM_NPCOp[0] & MEM_Zero;
-    assign MEM_NPCSel[1] = MEM_NPCOp[1];
-    assign MEM_NPCSel[2] = MEM_NPCOp[2];
-
-    wire [31:0] PCPLUS4;assign PCPLUS4 = IF_PC_out + 4; // pc + 4
-
-    wire [2:0] NPCOp ;assign NPCOp = MEM_NPCSel;
-
-    assign IF_Flush = MEM_NPCSel[0] | MEM_NPCSel[1] | MEM_NPCSel[2];
-    assign ID_Flush = MEM_NPCSel[0] | MEM_NPCSel[1] | MEM_NPCSel[2];
-    assign EX_Flush = MEM_NPCSel[0] | MEM_NPCSel[1] | MEM_NPCSel[2];
-
+    wire [31:0] NPCPLUS4; 
+    assign NPCPLUS4 = IF_PC + 4;
+    assign Branch = (EX_NPCSel==0) ? 1'b0 : 1'b1;
     always @(*) begin
-        case (NPCOp)
-            `NPC_PLUS4:  NPC <= PCPLUS4;
-            `NPC_BRANCH: NPC <= MEM_PC+MEM_immout;
-            `NPC_JUMP:   NPC <= MEM_PC+MEM_immout;
-            `NPC_JALR:   NPC <= MEM_aluout;
-            default:     NPC <= PCPLUS4;
+        case (EX_NPCSel)
+            `NPC_BRANCH: NPC = EX_PC+EX_immout;
+            `NPC_JUMP:   NPC = EX_PC+EX_immout;
+            `NPC_JALR:   NPC = EX_aluout;
+            `NPC_PC4:    NPC = NPCPLUS4;
+            default : NPC = NPCPLUS4;
         endcase
-
-       
    end // end always
     
 endmodule

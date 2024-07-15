@@ -24,9 +24,9 @@ module alu(A, B, ALUOp, C, Zero,PC);
 	input [31:0] PC;
    output signed [31:0] C;
    output Zero;
-   
+
    reg [31:0] C;
-       
+      
    always @( * ) begin
       case ( ALUOp )
          `ALUOp_nop:C=A;
@@ -49,10 +49,8 @@ module alu(A, B, ALUOp, C, Zero,PC);
          `ALUOp_sra:C=A>>>B;
       endcase
       //输出A，B，ALUOp，C，Zero
-      //$display("A=%d, B=%d, ALUOp=%d, C=%d, Zero=%d", A, B, ALUOp, C, Zero);
+      //$display("A=%d, B=%d, ALUOp=%b, C=%d, Zero=%d", A, B, ALUOp, C, Zero);
    end // end always
-   
    assign Zero = (C == 32'b0);
-
 endmodule
     

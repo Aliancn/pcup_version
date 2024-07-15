@@ -4,28 +4,25 @@ module IF_ID_stage(
     input wire IF_IDWrite,
     input wire IF_Flush,
     input wire [31:0] IF_inst,
-    input wire [31:0] PC_out,
-    output wire [31:0] ID_PC,
-    output wire [31:0] ID_inst
+    input wire [31:0] IF_PC_out,
+    output [31:0] ID_PC,
+    output [31:0] ID_inst
 );
-
-    wire [255:0] IF_ID_in;
-    wire [255:0] IF_ID_out;
-
-    // 组合输入信号
-    assign IF_ID_in = {IF_inst, PC_out};
-
-    // 实例化GRE_array模块
-    GRE_array U_IF_ID(
-        .Clk(clk), 
-        .Rst(reset), 
-        .write_enable(IF_IDWrite), 
-        .flush(IF_Flush), 
-        .in(IF_ID_in), 
-        .out(IF_ID_out)
-    );
-
-    // 分解输出信号
-    assign {ID_inst, ID_PC} = IF_ID_out;
+    wire [63:0] in ;
+    reg [63:0] out;
+    assign in = {IF_inst,IF_PC_out};
+    assign ID_PC = out[31:0];   
+    assign ID_inst = out[63:32];
+    always @(posedge clk ,posedge reset) begin
+        if (reset) begin
+            out <= 64'b0;  
+        end 
+        else if (IF_Flush)begin
+            out <= 64'b0;
+        end
+        else if (IF_IDWrite) begin
+            out <= in ;
+        end
+    end 
 
 endmodule

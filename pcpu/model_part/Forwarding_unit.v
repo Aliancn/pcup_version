@@ -31,55 +31,32 @@ module Forwarding_unit(
     input [31:0] MEM_aluout ,
     input [31:0] WB_WD ,
     input [31:0] EX_RD1 ,
-    input [31:0] EX_B ,
-    input EX_MEM_MemWrite ,
-    input [4:0] MEM_rs2 ,
-    output [31:0] ForwardAData ,
-    output [31:0] ForwardBData ,
-    output reg ForwardC
+    input [31:0] EX_RD2 ,
+    //input EX_MEM_MemWrite ,
+    //input [4:0] MEM_rs2 ,
+    output reg [31:0] ForwardAData ,
+    output reg [31:0] ForwardBData 
+    // output reg ForwardC
     );  
-
-    reg [1:0] ForwardA = 2'b00;
-    reg [1:0] ForwardB = 2'b00;
+    reg [1:0] ForwardA, ForwardB;
 
     always @(*) begin
-        if(EX_MEM_RegWrite && (EX_rs1 == MEM_rd) && (MEM_rd != 0)) begin
-            ForwardA = 2'b10;
+        ForwardA = 2'b00;ForwardB = 2'b00;
+        if(MEM_WB_RegWrite && (WB_rd != 0) ) begin
+            if (EX_rs1 == WB_rd)  ForwardA = 2'b01;
+            if (EX_rs2 == WB_rd)  ForwardB = 2'b01;
         end
-        else if  (MEM_WB_RegWrite 
-        && (EX_rs1 == WB_rd) 
-        && (WB_rd != 0) 
-        && !(EX_MEM_RegWrite && (MEM_rd != 0 ) && (MEM_rd == EX_rs1) )) begin
-            ForwardA = 2'b01;
+        if(EX_MEM_RegWrite && (MEM_rd != 0)) begin
+            if (EX_rs1 == MEM_rd) ForwardA = 2'b10;
+            if (EX_rs2 == MEM_rd) ForwardB = 2'b10;
         end
-        else begin
-            ForwardA = 2'b00;
-        end
-
-        if(EX_MEM_RegWrite && (EX_rs2 == MEM_rd) && (MEM_rd != 0)) begin
-            ForwardB = 2'b10;
-        end
-        else if(MEM_WB_RegWrite 
-        && (EX_rs2 == WB_rd) 
-        && (WB_rd != 0)
-        && !(EX_MEM_RegWrite && (MEM_rd != 0 ) && (MEM_rd == EX_rs2))) begin
-            ForwardB = 2'b01;
-        end
-        else begin
-            ForwardB = 2'b00;
-        end
-
-        if( MEM_WB_RegWrite
-        && EX_MEM_MemWrite
-        && (WB_rd != 0)
-        && (WB_rd == MEM_rs2))begin   
-            ForwardC = 1'b1;   
-        end
-        else begin
-            ForwardC = 1'b0;
-        end 
+          
     end
-    assign ForwardAData = (ForwardA==`Forward_FromEX_MEM) ? MEM_aluout : ((ForwardA==`Forward_FromMEM_WB) ? WB_WD : EX_RD1);
-    assign ForwardBData = (ForwardB==`Forward_FromEX_MEM) ? MEM_aluout : ((ForwardB==`Forward_FromMEM_WB) ? WB_WD : EX_B);
-
+    
+    always @(*) begin
+        ForwardAData = (ForwardA == `Forward_FromEX_MEM) ? MEM_aluout : 
+                           (ForwardA == `Forward_FromMEM_WB) ? WB_WD : EX_RD1;
+        ForwardBData = (ForwardB == `Forward_FromEX_MEM) ? MEM_aluout :
+                            (ForwardB == `Forward_FromMEM_WB) ? WB_WD : EX_RD2;
+    end
 endmodule

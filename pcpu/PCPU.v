@@ -25,13 +25,12 @@ module PCPU(
 );
 
     // control signal
-    wire IF_Flush;
-    wire ID_Flush_hazard;
-    wire ID_Flush_branch;
-    wire ID_Flush ; assign ID_Flush = ID_Flush_branch ;
-    wire EX_Flush ;
-    wire PCWrite; 
-    wire IF_IDWrite; 
+    //wire IF_Flush;
+    //wire ID_Flush_hazard ;
+    wire Branch ;
+    wire Hazard;
+    //wire PCWrite; 
+    //wire IF_IDWrite; 
     
 
     /********************************start***********************************/
@@ -39,18 +38,16 @@ module PCPU(
     /************* if  *************/  
     wire [31:0] IF_inst;    assign IF_inst = inst_in;  // cpu in
     wire [31:0] IF_NPC ; 
-    wire [31:0] IF_PC_out; 
+    wire [31:0] IF_PC_out; assign PC_out = IF_PC_out;
               
-    wire WB_RegWrite;  
-    wire [31:0]WB_WD; 
     IF U_IF (
         .clk(clk),
         .reset(reset),
         .IF_NPC(IF_NPC),
-        .PCWrite(PCWrite),
+        .PCWrite(~Hazard),
         .IF_PC_out(IF_PC_out)
     );
-    assign PC_out = IF_PC_out;
+    
 
     /************* if\id reg *************/  
     wire [31:0] ID_inst;
@@ -59,11 +56,11 @@ module PCPU(
         // signal
         .clk(clk),
         .reset(reset),
-        .IF_IDWrite(IF_IDWrite),
-        .IF_Flush(IF_Flush),
+        .IF_IDWrite(~Hazard),
+        .IF_Flush(Branch),
         // reg
         .IF_inst(IF_inst),.ID_inst(ID_inst),
-        .PC_out(IF_PC_out),.ID_PC(ID_PC)
+        .IF_PC_out(IF_PC_out),.ID_PC(ID_PC)
     );
 
     /************* id *************/
@@ -78,6 +75,8 @@ module PCPU(
     wire [2:0]  ID_NPCOp;       // next PC operation
     wire [1:0]  ID_WDSel;       // write data selection
     wire [4:0]  WB_rd ;
+    wire WB_RegWrite;  
+    wire [31:0]WB_WD; 
     ID U_ID (
         .clk(clk),
         .reset(reset),
@@ -116,14 +115,13 @@ module PCPU(
     wire EX_mem_w;    // memory write control signal
     wire [4:0]  EX_ALUOp;       // ALU opertion
     wire [1:0] EX_WDSel;       // write data selection
-    wire [2:0] EX_NPCOp ; 
-    wire [31:0] EX_B;         
+    wire [2:0] EX_NPCOp ;        
     wire EX_mem_read ; // memory read control signal
     ID_EX_stage U_ID_EX(
         .clk(clk),
         .reset(reset),
-        .ID_Flush(ID_Flush),
-        .ID_Flush_hazard(ID_Flush_hazard),
+        .ID_Flush_branch(Branch),
+        .ID_Flush_hazard(Hazard),
         .ID_PC(ID_PC),            .EX_PC(EX_PC),
         .ID_rs1(ID_rs1),          .EX_rs1(EX_rs1),
         .ID_rs2(ID_rs2),          .EX_rs2(EX_rs2),
@@ -138,8 +136,7 @@ module PCPU(
         .ID_ALUOp(ID_ALUOp),      .EX_ALUOp(EX_ALUOp),
         .ID_WDSel(ID_WDSel),      .EX_WDSel(EX_WDSel),
         .ID_NPCOp(ID_NPCOp),      .EX_NPCOp(EX_NPCOp),
-        .ID_ALUSrc(ID_ALUSrc),    .EX_ALUSrc(EX_ALUSrc),
-        .EX_B(EX_B)
+        .ID_ALUSrc(ID_ALUSrc),    .EX_ALUSrc(EX_ALUSrc)
     );
 
 
@@ -149,13 +146,17 @@ module PCPU(
     wire EX_Zero;
     wire [31:0] EX_aluout; // ex alu output 
     wire [31:0] ForwardAData, ForwardBData;
+    wire [2:0]EX_NPCSel;
     EX U_EX(
         .EX_PC(EX_PC),
         .ForwardAData(ForwardAData),
         .ForwardBData(ForwardBData),
+        .EX_ALUSrc(EX_ALUSrc),
+        .EX_immout(EX_immout),
         .EX_ALUOp(EX_ALUOp),
+        .EX_NPCOp(EX_NPCOp),
         .EX_aluout(EX_aluout),
-        .EX_Zero(EX_Zero)
+        .EX_NPCSel(EX_NPCSel)
     );
 
     /****************ex\mem reg********************/
@@ -174,39 +175,25 @@ module PCPU(
     EX_MEM_stage U_EX_MEM(
         .clk(clk),
         .reset(reset),
-        .EX_Flush(EX_Flush),
+        .EX_Flush(1'b0),
         .EX_PC(EX_PC),.MEM_PC(MEM_PC),
         .EX_rd(EX_rd), .MEM_rd(MEM_rd),
-        .EX_RD2(EX_RD2), .MEM_RD2(MEM_RD2),
+        .EX_RD2(ForwardBData), .MEM_RD2(MEM_RD2),
         .EX_immout(EX_immout), .MEM_immout(MEM_immout),
         .EX_dm_ctrl(EX_dm_ctrl), .MEM_dm_ctrl(MEM_dm_ctrl),
         .EX_RegWrite(EX_RegWrite), .MEM_RegWrite(MEM_RegWrite),
         .EX_mem_w(EX_mem_w), .MEM_mem_w(MEM_mem_w),
         .EX_aluout(EX_aluout), .MEM_aluout(MEM_aluout),
         .EX_WDSel(EX_WDSel),  .MEM_WDSel(MEM_WDSel),
-        .EX_Zero(EX_Zero),.MEM_Zero(MEM_Zero),
-        .EX_NPCOp(EX_NPCOp),  .MEM_NPCOp(MEM_NPCOp),
-        .EX_rs2(EX_rs2), .MEM_rs2(MEM_rs2)
+        .EX_NPCOp(EX_NPCSel),  .MEM_NPCOp(MEM_NPCOp)
     );
 
     /**************** mem  *******************/ 
-    wire [31:0] MEM_Data_in ;
-    wire ForwardC;
-    MEM U_MEM(
-        .MEM_aluout(MEM_aluout),
-        .MEM_dm_ctrl(MEM_dm_ctrl),
-        .ForwardC(ForwardC),
-        .MEM_RD2(MEM_RD2),
-        .WB_WD(WB_WD),
-        .MEM_mem_w(MEM_mem_w),
-        .Data_in(Data_in),
-        .Addr_out(Addr_out),
-        .dm_ctrl(dm_ctrl),
-        .Data_out(Data_out),
-        .mem_w(mem_w),
-        .MEM_Data_in(MEM_Data_in)
-    );
-     
+    // wire [31:0] MEM_Data_in ; assign MEM_Data_in = Data_in;  // cpu in
+    assign Addr_out = MEM_aluout;
+    assign dm_ctrl = MEM_dm_ctrl;
+    assign Data_out = MEM_RD2;
+    assign mem_w = MEM_mem_w;
 
 
     
@@ -222,7 +209,7 @@ module PCPU(
         .MEM_PC(MEM_PC), .WB_PC(WB_PC),
         .MEM_rd(MEM_rd), .WB_rd(WB_rd),
         .MEM_aluout(MEM_aluout), .WB_aluout(WB_aluout),
-        .MEM_Data_in(MEM_Data_in), .WB_Data_in(WB_Data_in),
+        .MEM_Data_in(Data_in), .WB_Data_in(WB_Data_in),
         .MEM_WDSel(MEM_WDSel), .WB_WDSel(WB_WDSel),
         .MEM_RegWrite(MEM_RegWrite), .WB_RegWrite(WB_RegWrite)
     );
@@ -233,7 +220,7 @@ module PCPU(
     */ 
     WB U_WB(
         .WB_aluout(WB_aluout),
-        .WB_Data_in(WB_Data_in),
+        .WB_Data_in(WB_Data_in),  /// **important**
         .WB_PC(WB_PC),
         .WB_WDSel(WB_WDSel),
         .WB_WD(WB_WD)  
@@ -251,13 +238,10 @@ module PCPU(
         .MEM_aluout(MEM_aluout),
         .WB_WD(WB_WD),
         .EX_RD1(EX_RD1),
-        .EX_B(EX_B),
-        .EX_MEM_MemWrite(EX_mem_w), // fc 
-        .MEM_rs2(MEM_rs2), // fc 
+        .EX_RD2(EX_RD2),
         // output 
         .ForwardAData(ForwardAData),
-        .ForwardBData(ForwardBData),
-        .ForwardC(ForwardC)  //fc
+        .ForwardBData(ForwardBData)
     ); 
     Hazard_detection U_hazard_detection(
         // input 
@@ -266,22 +250,20 @@ module PCPU(
         .ID_rs1 (ID_rs1),
         .ID_rs2 (ID_rs2),
         // output
-        .PCWrite (PCWrite),
-        .IF_IDWrite (IF_IDWrite),
-        .ID_Flush_hazard (ID_Flush_hazard)
+        // .PCWrite (PCWrite),
+        // .IF_IDWrite (IF_IDWrite),
+        // .ID_Flush_hazard (ID_Flush_hazard)
+        .Hazard(Hazard)
     );
     
     Branch U_Branch(
-        .IF_PC_out(IF_PC_out),
-        .MEM_PC(MEM_PC),
-        .MEM_NPCOp(MEM_NPCOp),
-        .MEM_immout(MEM_immout),
-        .MEM_aluout(MEM_aluout),
-        .MEM_Zero(MEM_Zero),
-        .IF_Flush(IF_Flush),
-        .ID_Flush(ID_Flush_branch),
-        .EX_Flush(EX_Flush),
-        .NPC(IF_NPC)
+        .IF_PC(IF_PC_out),
+        .EX_PC(EX_PC),
+        .EX_NPCSel(EX_NPCSel),
+        .EX_immout(EX_immout),
+        .EX_aluout(EX_aluout),
+        .NPC(IF_NPC),
+        .Branch(Branch)
     );
     /********************************end***********************************/
 

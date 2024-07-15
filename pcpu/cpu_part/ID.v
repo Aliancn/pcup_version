@@ -42,7 +42,7 @@ module ID (
         .Funct7(ID_Funct7),
         .Funct3(ID_Funct3), 
         // out 
-		.RegWrite(ID_RegWrite),  // todo 
+		.RegWrite(ID_RegWrite),  
         .MemWrite(ID_mem_w),     
 		.EXTOp(ID_EXTOp), 
         .ALUOp(ID_ALUOp),

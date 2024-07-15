@@ -85,9 +85,6 @@ module top (
     wire [7:0] LE_out;
     wire [31:0] Disp_num;
     
-    //U6_SSeg7
-    wire [7:0] seg_an;
-    wire [7:0] seg_sout;
     
     wire rst_i;
     wire IO_clk_i;
@@ -115,7 +112,7 @@ module top (
         .EN(GPIOe0000000_we),
         .Switch(SW_out[7:5]),
         .point_in({clkdiv[31:0], clkdiv[31:0]}),
-        .LES(~64'h00000000),
+        .LES(~64'b0),
         .data0(Peripheral_in),
         .data1({1'b0, 1'b0, PC_out[31:2]}),
         .data2(spo),
@@ -202,6 +199,7 @@ module top (
     PCPU U1_PCPU (
         .clk(Clk_CPU),
         .INT(counter0_OUT),
+        .MIO_ready(CPU_MIO),
         .reset(rst_i),
         .Data_in(Data_read),
         .inst_in(spo),
@@ -209,6 +207,7 @@ module top (
         .PC_out(PC_out),
         .Addr_out(Addr_out),
         .Data_out(Data_out),
+        .CPU_MIO(CPU_MIO),
         .dm_ctrl(dm_ctrl)
     );
 
