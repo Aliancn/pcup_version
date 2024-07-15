@@ -41,21 +41,21 @@ module ID_EX_stage(
     reg [255:0] out;
     reg [255:0] out_backup;
     assign in = {ID_ALUSrc, ID_NPCOp, ID_WDSel, ID_ALUOp, ID_mem_read, ID_mem_w, ID_RegWrite, ID_dm_ctrl, ID_immout, ID_RD2, ID_RD1, ID_rd, ID_rs2, ID_rs1, ID_PC};
-    assign EX_PC = out[31:0];
-    assign EX_rs1 = out[36:32];
-    assign EX_rs2 = out[41:37];
-    assign EX_rd = out[46:42];
-    assign EX_RD1 = out[78:47];
-    assign EX_RD2 = out[110:79];
-    assign EX_immout = out[142:111];
-    assign EX_dm_ctrl = out[145:143];
-    assign EX_RegWrite = out[146];
-    assign EX_mem_w = out[147];
-    assign EX_mem_read = out[148];
-    assign EX_ALUOp = out[153:149];
-    assign EX_WDSel = out[155:154];
-    assign EX_NPCOp = out[158:156];
-    assign EX_ALUSrc = out[159];
+    assign EX_PC = (INT_detected == 1) ? 0 :out[31:0];
+    assign EX_rs1 = (INT_detected == 1) ? 0 :out[36:32];
+    assign EX_rs2 = (INT_detected == 1) ? 0 :out[41:37];
+    assign EX_rd = (INT_detected == 1) ? 0 :out[46:42];
+    assign EX_RD1 = (INT_detected == 1) ? 0 :out[78:47];
+    assign EX_RD2 = (INT_detected == 1) ? 0 :out[110:79];
+    assign EX_immout = (INT_detected == 1) ? 0 :out[142:111];
+    assign EX_dm_ctrl = (INT_detected == 1) ? 0 :out[145:143];
+    assign EX_RegWrite = (INT_detected == 1) ? 0 :out[146];
+    assign EX_mem_w = (INT_detected == 1) ? 0 :out[147];
+    assign EX_mem_read = (INT_detected == 1) ? 0 :out[148];
+    assign EX_ALUOp = (INT_detected == 1) ? 0 :out[153:149];
+    assign EX_WDSel = (INT_detected == 1) ? 0 :out[155:154];
+    assign EX_NPCOp = (INT_detected == 1) ? 0 :out[158:156];
+    assign EX_ALUSrc = (INT_detected == 1) ? 0 :out[159];
 
     always @(posedge clk , posedge reset) begin
         if (reset) begin
@@ -96,11 +96,10 @@ module ID_EX_stage(
         end 
         // INT 
         else if (INT_detected) begin
-            out_backup = out;
-            out = 64'b0;
+            out_backup <= out;
         end
         else if (INT_restore) begin
-            out = out_backup;
+            out <= out_backup;
         end
         else  begin
             out <= in;

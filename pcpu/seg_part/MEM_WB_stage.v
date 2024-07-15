@@ -21,16 +21,16 @@ module MEM_WB_stage(
     reg [255:0] out ;
     reg [255:0] out_backup;
     assign in = {MEM_RegWrite,MEM_WDSel, MEM_Data_in, MEM_aluout, MEM_rd, MEM_PC};
-    assign WB_PC = out[31:0];
-    assign WB_rd = out[36:32];
-    assign WB_aluout = out[68:37];
-    assign WB_Data_in = out[100:69];
-    assign WB_WDSel = out[102:101];
-    assign WB_RegWrite = out[103];
+    assign WB_PC = (INT_detected == 1) ? 0 :out[31:0];
+    assign WB_rd = (INT_detected == 1) ? 0 :out[36:32];
+    assign WB_aluout = (INT_detected == 1) ? 0 :out[68:37];
+    assign WB_Data_in = (INT_detected == 1) ? 0 :out[100:69];
+    assign WB_WDSel = (INT_detected == 1) ? 0 :out[102:101];
+    assign WB_RegWrite = (INT_detected == 1) ? 0 :out[103];
 
     always@(posedge clk, posedge reset)begin 
         if (reset) begin
-            out = 0;
+            out <= 0;
             // WB_PC <= 32'h00000000;
             // WB_rd <= 5'b00000;
             // WB_aluout <= 32'h00000000;
@@ -40,14 +40,13 @@ module MEM_WB_stage(
         end
         // INT 
         else if (INT_detected) begin
-            out_backup = out;
-            out = 64'b0;
+            out_backup <= out;
         end
         else if (INT_restore) begin
-            out = out_backup;
+            out <= out_backup;
         end
         else begin
-            out = in;
+            out <= in;
             // WB_PC <= MEM_PC;
             // WB_rd <= MEM_rd;
             // WB_aluout <= MEM_aluout;

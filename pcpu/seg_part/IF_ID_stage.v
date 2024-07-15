@@ -14,25 +14,24 @@ module IF_ID_stage(
     reg [63:0]out_backup;
     reg [63:0] out;
     assign in = {IF_inst,IF_PC_out};
-    assign ID_PC = out[31:0];   
-    assign ID_inst = out[63:32];
+    assign ID_PC = (INT_detected == 1) ? 0 :out[31:0];   
+    assign ID_inst = (INT_detected == 1) ? 0 :out[63:32];
     always @(posedge clk ,posedge reset) begin
         if (reset) begin
-            out = 64'b0;  
+            out <= 64'b0;  
         end 
         else if (IF_Flush)begin
-            out = 64'b0;
+            out <= 64'b0;
         end
         // INT 
         else if (INT_detected) begin
-            out_backup = out;
-            out = 64'b0;
+            out_backup <= out;
         end
         else if (INT_restore) begin
-            out = out_backup;
+            out <= out_backup;
         end
         else if (IF_IDWrite) begin
-            out = in ;
+            out <= in ;
         end
     end 
 

@@ -53,19 +53,29 @@ module EX_MEM_stage(
     reg [255:0] out ; 
     reg [255:0] out_backup;
     assign in = {EX_NPCOp,EX_WDSel,EX_aluout,EX_mem_w,EX_RegWrite,EX_dm_ctrl,EX_immout,EX_RD2,EX_rd,EX_PC};
-    assign MEM_PC = out[31:0];
-    assign MEM_rd = out[36:32];
-    assign MEM_RD2 = out[68:37];
-    assign MEM_immout = out[100:69];
-    assign MEM_dm_ctrl = out[103:101];
-    assign MEM_RegWrite = out[104];
-    assign MEM_mem_w = out[105];
-    assign MEM_aluout = out[137:106];
-    assign MEM_WDSel = out[139:138];
-    assign MEM_NPCOp = out[142:140];
+    // assign MEM_PC = out[31:0];
+    // assign MEM_rd = out[36:32];
+    // assign MEM_RD2 = out[68:37];
+    // assign MEM_immout = out[100:69];
+    // assign MEM_dm_ctrl = out[103:101];
+    // assign MEM_RegWrite = out[104];
+    // assign MEM_mem_w = out[105];
+    // assign MEM_aluout = out[137:106];
+    // assign MEM_WDSel = out[139:138];
+    // assign MEM_NPCOp = out[142:140];
+    assign MEM_PC = (INT_detected == 1) ? 0 :out[31:0];
+    assign MEM_rd = (INT_detected == 1) ? 0 :out[36:32];
+    assign MEM_RD2 = (INT_detected == 1) ? 0 :out[68:37];
+    assign MEM_immout = (INT_detected == 1) ? 0 :out[100:69];
+    assign MEM_dm_ctrl = (INT_detected == 1) ? 0 :out[103:101];
+    assign MEM_RegWrite = (INT_detected == 1) ? 0 :out[104];
+    assign MEM_mem_w = (INT_detected == 1) ? 0 :out[105];
+    assign MEM_aluout = (INT_detected == 1) ? 0 :out[137:106];
+    assign MEM_WDSel = (INT_detected == 1) ? 0 :out[139:138];
+    assign MEM_NPCOp = (INT_detected == 1) ? 0 :out[142:140];
     always@(posedge clk, posedge reset)begin 
         if (reset) begin
-            out = 0;
+            out <= 0;
             // MEM_PC <= 32'h00000000;
             // MEM_rd <= 5'b00000;
             // MEM_RD2 <= 5'b00000;
@@ -92,14 +102,13 @@ module EX_MEM_stage(
         // end 
         // INT 
         else if (INT_detected) begin
-            out_backup = out;
-            out = 255'b0;
+            out_backup <= out;
         end
         else if (INT_restore) begin
-            out = out_backup;
+            out <= out_backup;
         end
         else begin
-            out = in;
+            out <= in;
             // MEM_PC <= EX_PC;
             // MEM_rd <= EX_rd;
             // MEM_RD2 <= EX_RD2;

@@ -31,8 +31,8 @@ module PCPU(
     wire Hazard;
     //wire PCWrite; 
     //wire IF_IDWrite; 
-    wire INT_detected;
-    wire INT_restore;
+    wire INT_detected = 0;
+    wire INT_restore  = 0;
     wire int_finished;  
 
     /********************************start***********************************/
@@ -280,12 +280,12 @@ module PCPU(
     );
 
     // interrupt
-    INT_stage U_INT(
-        .ext_int(1'b0),
-        .int_finished(int_finished),
-        .int_detected(INT_detected),
-        .int_restore(INT_restore)
-    );
+    // INT_stage U_INT(
+    //     .ext_int(1'b0),
+    //     .int_finished(int_finished),
+    //     .int_detected(INT_detected),
+    //     .int_restore(INT_restore)
+    // );
     /********************************end***********************************/
 
 

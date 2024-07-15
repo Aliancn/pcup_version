@@ -86,7 +86,7 @@ module ctrl(Op, Funct7, Funct3,
     wire i_auipc = ~Op[6]&~Op[5]&Op[4]&~Op[3]&Op[2]&Op[1]&Op[0];//auipc 0010111
 
   //INT
-  wire mret = Op[6]&Op[5]&~Op[4]&~Op[3]&Op[2]&Op[1]&Op[0]; // mret 1110011
+  wire mret = Op[6]&Op[5]&Op[4]&~Op[3]&~Op[2]&Op[1]&Op[0]; // mret 1110011
   assign int_finished = mret;
 
   // generate control signals
