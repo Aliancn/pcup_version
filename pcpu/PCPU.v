@@ -12,7 +12,7 @@
 module PCPU(
     input clk,
     input reset,
-    input MIO_ready,    // not used 
+    input MIO_ready,    // not used  
     input [31:0]inst_in,  // instruction
     input [31:0]Data_in,  // data in bus
     input INT,         // interrupt signal
@@ -31,7 +31,9 @@ module PCPU(
     wire Hazard;
     //wire PCWrite; 
     //wire IF_IDWrite; 
-    
+    wire INT_detected;
+    wire INT_restore;
+    wire int_finished;  
 
     /********************************start***********************************/
     
@@ -43,6 +45,8 @@ module PCPU(
     IF U_IF (
         .clk(clk),
         .reset(reset),
+        .INT_detected(INT_detected),
+        .INT_restore(INT_restore),
         .IF_NPC(IF_NPC),
         .PCWrite(~Hazard),
         .IF_PC_out(IF_PC_out)
@@ -58,6 +62,8 @@ module PCPU(
         .reset(reset),
         .IF_IDWrite(~Hazard),
         .IF_Flush(Branch),
+        .INT_detected(INT_detected),
+        .INT_restore(INT_restore),
         // reg
         .IF_inst(IF_inst),.ID_inst(ID_inst),
         .IF_PC_out(IF_PC_out),.ID_PC(ID_PC)
@@ -97,7 +103,8 @@ module PCPU(
         .ID_ALUOp(ID_ALUOp),
         .ID_WDSel(ID_WDSel),
         .ID_NPCOp(ID_NPCOp),
-        .ID_ALUSrc(ID_ALUSrc)
+        .ID_ALUSrc(ID_ALUSrc),
+        .int_finished(int_finished)
     );
 
     
@@ -122,6 +129,8 @@ module PCPU(
         .reset(reset),
         .ID_Flush_branch(Branch),
         .ID_Flush_hazard(Hazard),
+        .INT_detected(INT_detected),
+        .INT_restore(INT_restore),
         .ID_PC(ID_PC),            .EX_PC(EX_PC),
         .ID_rs1(ID_rs1),          .EX_rs1(EX_rs1),
         .ID_rs2(ID_rs2),          .EX_rs2(EX_rs2),
@@ -176,6 +185,8 @@ module PCPU(
         .clk(clk),
         .reset(reset),
         .EX_Flush(1'b0),
+        .INT_detected(INT_detected),
+        .INT_restore(INT_restore),
         .EX_PC(EX_PC),.MEM_PC(MEM_PC),
         .EX_rd(EX_rd), .MEM_rd(MEM_rd),
         .EX_RD2(ForwardBData), .MEM_RD2(MEM_RD2),
@@ -206,6 +217,8 @@ module PCPU(
     MEM_WB_stage U_MEM_WB(
         .clk(clk),
         .reset(reset),
+        .INT_detected(INT_detected),
+        .INT_restore(INT_restore),
         .MEM_PC(MEM_PC), .WB_PC(WB_PC),
         .MEM_rd(MEM_rd), .WB_rd(WB_rd),
         .MEM_aluout(MEM_aluout), .WB_aluout(WB_aluout),
@@ -264,6 +277,14 @@ module PCPU(
         .EX_aluout(EX_aluout),
         .NPC(IF_NPC),
         .Branch(Branch)
+    );
+
+    // interrupt
+    INT_stage U_INT(
+        .ext_int(1'b0),
+        .int_finished(int_finished),
+        .int_detected(INT_detected),
+        .int_restore(INT_restore)
     );
     /********************************end***********************************/
 

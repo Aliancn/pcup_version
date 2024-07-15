@@ -24,6 +24,8 @@ module EX_MEM_stage(
     input wire clk,
     input wire reset,
     input EX_Flush,
+    input wire INT_detected,
+    input wire INT_restore,
     input wire [31:0] EX_PC,
     input wire [4:0] EX_rd,
     input wire [31:0] EX_RD2,
@@ -49,6 +51,7 @@ module EX_MEM_stage(
 
     wire [255:0] in ;
     reg [255:0] out ; 
+    reg [255:0] out_backup;
     assign in = {EX_NPCOp,EX_WDSel,EX_aluout,EX_mem_w,EX_RegWrite,EX_dm_ctrl,EX_immout,EX_RD2,EX_rd,EX_PC};
     assign MEM_PC = out[31:0];
     assign MEM_rd = out[36:32];
@@ -62,7 +65,7 @@ module EX_MEM_stage(
     assign MEM_NPCOp = out[142:140];
     always@(posedge clk, posedge reset)begin 
         if (reset) begin
-            out <= 0;
+            out = 0;
             // MEM_PC <= 32'h00000000;
             // MEM_rd <= 5'b00000;
             // MEM_RD2 <= 5'b00000;
@@ -87,8 +90,16 @@ module EX_MEM_stage(
             // MEM_WDSel <= 2'b00;
             // MEM_NPCOp <= 3'b000;
         // end 
+        // INT 
+        else if (INT_detected) begin
+            out_backup = out;
+            out = 255'b0;
+        end
+        else if (INT_restore) begin
+            out = out_backup;
+        end
         else begin
-            out <= in;
+            out = in;
             // MEM_PC <= EX_PC;
             // MEM_rd <= EX_rd;
             // MEM_RD2 <= EX_RD2;

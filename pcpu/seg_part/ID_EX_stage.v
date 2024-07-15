@@ -3,6 +3,8 @@ module ID_EX_stage(
     input wire reset,
     input wire ID_Flush_branch,
     input wire ID_Flush_hazard,
+    input wire INT_detected,
+    input wire INT_restore,
     input wire [31:0] ID_PC,
     input wire [4:0] ID_rs1,
     input wire [4:0] ID_rs2,
@@ -37,6 +39,7 @@ module ID_EX_stage(
 
     wire [255:0] in; 
     reg [255:0] out;
+    reg [255:0] out_backup;
     assign in = {ID_ALUSrc, ID_NPCOp, ID_WDSel, ID_ALUOp, ID_mem_read, ID_mem_w, ID_RegWrite, ID_dm_ctrl, ID_immout, ID_RD2, ID_RD1, ID_rd, ID_rs2, ID_rs1, ID_PC};
     assign EX_PC = out[31:0];
     assign EX_rs1 = out[36:32];
@@ -91,6 +94,14 @@ module ID_EX_stage(
             // EX_NPCOp <= 3'b000;
             // EX_ALUSrc <= 1'b0;
         end 
+        // INT 
+        else if (INT_detected) begin
+            out_backup = out;
+            out = 64'b0;
+        end
+        else if (INT_restore) begin
+            out = out_backup;
+        end
         else  begin
             out <= in;
             // EX_PC <= ID_PC;

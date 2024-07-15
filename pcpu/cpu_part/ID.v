@@ -18,7 +18,8 @@ module ID (
     output [4:0] ID_ALUOp,
     output [1:0] ID_WDSel,
     output [2:0] ID_NPCOp,
-    output ID_ALUSrc
+    output ID_ALUSrc,
+    output int_finished
 );
 
 
@@ -50,7 +51,8 @@ module ID (
         .ALUSrc(ID_ALUSrc),
 		.DMType(ID_dm_ctrl),
         .WDSel(ID_WDSel),
-        .mem_read(ID_mem_read)
+        .mem_read(ID_mem_read),
+        .int_finished(int_finished)
 	);
 
     RF U_RF(
