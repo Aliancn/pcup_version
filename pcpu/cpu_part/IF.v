@@ -1,4 +1,4 @@
-`define INT_TIMER 32'h00001000
+`define INT_TIMER 32'h00000A78
 module IF (
     input clk,
     input reset,

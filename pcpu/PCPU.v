@@ -31,9 +31,12 @@ module PCPU(
     wire Hazard;
     //wire PCWrite; 
     //wire IF_IDWrite; 
-    wire INT_detected = 0;
-    wire INT_restore  = 0;
+    wire INT_detected;
+    wire INT_restore;
     wire int_finished;  
+    wire  INT_for_test ;
+    assign INT_detected = INT_for_test;
+    assign INT_restore = int_finished;
 
     /********************************start***********************************/
     
@@ -286,6 +289,13 @@ module PCPU(
     //     .int_detected(INT_detected),
     //     .int_restore(INT_restore)
     // );
+
+
+    Clock U_Clock(
+        .clk(clk),
+        .reset(reset),
+        .timer_interrupt(INT_for_test)
+    );
     /********************************end***********************************/
 
 
